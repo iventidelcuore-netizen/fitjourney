@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User's physical data and goals.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "weight": { "type": "number" },
+        "height": { "type": "number" },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["male", "female"] },
+        "activityLevel": { "type": "string", "enum": ["sedentary", "lightlyActive", "moderatelyActive", "veryActive", "extraActive"] },
+        "goalWeight": { "type": "number" },
+        "goalDate": { "type": "string", "format": "date" },
+        "tmb": { "type": "number" },
+        "tdee": { "type": "number" },
+        "dailyCalorieGoal": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "weight", "height", "age", "gender", "activityLevel"]
+    },
+    "Meal": {
+      "title": "Meal Entry",
+      "description": "A food entry in the user's diary.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "calories": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "date", "description", "calories", "timestamp"]
+    },
+    "WeightHistory": {
+      "title": "Weight History",
+      "description": "History of weight measurements.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "weight": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "date", "weight", "timestamp"]
+    },
+    "Exercise": {
+      "title": "Exercise Entry",
+      "description": "An exercise activity performed by the user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "caloriesBurned": { "type": "number" },
+        "duration": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "date", "caloriesBurned", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "/meals/{mealId}": {
+      "schema": "Meal",
+      "description": "Meal entries."
+    },
+    "/weightHistory/{historyId}": {
+      "schema": "WeightHistory",
+      "description": "Weight history entries."
+    },
+    "/exercises/{exerciseId}": {
+      "schema": "Exercise",
+      "description": "Exercise entries."
+    }
+  }
+}

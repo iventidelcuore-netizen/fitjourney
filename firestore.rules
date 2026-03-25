@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (optional)
+    //   - email: string (optional)
+    //   - weight: number (required)
+    //   - height: number (required)
+    //   - age: number (required)
+    //   - gender: string (required, enum: male, female)
+    //   - activityLevel: string (required)
+    //   - goalWeight: number (optional)
+    //   - tmb: number (optional)
+    //   - tdee: number (optional)
+    //   - dailyCalorieGoal: number (optional)
+    //   - updatedAt: string (optional)
+    //
+    // Collection: meals
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - description: string (required)
+    //   - calories: number (required)
+    //   - timestamp: string (required)
+    //
+    // Collection: weightHistory
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - weight: number (required)
+    //   - timestamp: string (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function requestUidMatches() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.uid;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'weight', 'height', 'age', 'gender', 'activityLevel']) &&
+             data.uid is string &&
+             data.weight is number && data.weight > 0 &&
+             data.height is number && data.height > 0 &&
+             data.age is number && data.age > 0 &&
+             data.gender in ['male', 'female'] &&
+             data.activityLevel in ['sedentary', 'lightlyActive', 'moderatelyActive', 'veryActive', 'extraActive'];
+    }
+
+    function isValidMeal(data) {
+      return data.keys().hasAll(['uid', 'date', 'description', 'calories', 'timestamp']) &&
+             data.uid is string &&
+             data.date is string &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
+             data.calories is number &&
+             data.timestamp is string;
+    }
+
+    function isValidWeight(data) {
+      return data.keys().hasAll(['uid', 'date', 'weight', 'timestamp']) &&
+             data.uid is string &&
+             data.date is string &&
+             data.weight is number && data.weight > 0 &&
+             data.timestamp is string;
+    }
+
+    // Rules
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /meals/{mealId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if requestUidMatches() && isValidMeal(request.resource.data);
+      allow update: if isDocOwner() && requestUidMatches() && isValidMeal(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /weightHistory/{historyId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if requestUidMatches() && isValidWeight(request.resource.data);
+      allow update: if isDocOwner() && requestUidMatches() && isValidWeight(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    function isValidExercise(data) {
+      return data.keys().hasAll(['uid', 'date', 'caloriesBurned', 'timestamp']) &&
+             data.uid is string &&
+             data.date is string &&
+             data.caloriesBurned is number && data.caloriesBurned >= 0 &&
+             data.timestamp is string;
+    }
+
+    match /exercises/{exerciseId} {
+      allow list: if isAuthenticated();
+      allow get: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if requestUidMatches() && isValidExercise(request.resource.data);
+      allow update: if isDocOwner() && requestUidMatches() && isValidExercise(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+  }
+}
